@@ -8,6 +8,15 @@
             "cacheVariables": {
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "YES"
             }
+        },
+        {
+            "name": "debug",
+            "displayName": "Debug",
+            "binaryDir": "${sourceDir}/debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
         }
     ]
 }

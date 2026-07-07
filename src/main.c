@@ -1,27 +1,78 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 typedef struct {
 	int in_braces;
+	int in_key;
+	int in_value;
+
+	int valid;
 } parser_struct_t;
 
-parser_struct_t state = {0};
+int parse_whitespace(int idx, char *buffer, int n, parser_struct_t *state) {
+	while (idx < n &&
+		   (buffer[idx] == ' ' || buffer[idx] == '\n' || buffer[idx] == '\t')) {
+		idx++;
+	}
+	return idx;
+}
 
-int parse(char *buffer, int n) {
-	for (int i = 0; i < n; i++) {
-		if (buffer[i] == '{') {
-			state.in_braces++;
-		} else if (buffer[i] == '}') {
-			state.in_braces--;
-			if (state.in_braces < 0) {
-				return 1;
-			}
-		} else if (buffer[i] != ' ') {
-			return 1;
+int parse_value(int idx, char *buffer, int n, parser_struct_t *state) {
+	state->in_value = 1;
+	while (idx < n && buffer[idx] != '\"' && buffer[idx] != ',' &&
+		   buffer[idx] != '}') {
+		idx++;
+	}
+	state->in_value = 0;
+	return idx;
+}
+
+int parse_key(int idx, char *buffer, int n, parser_struct_t *state) {
+	if (!state->in_key) {
+		idx++;
+		state->in_key = 1;
+	}
+
+	while (idx < n && buffer[idx] != '\"') {
+		idx++;
+	}
+	idx = parse_whitespace(idx, buffer, n, state);
+
+	if (idx < n && buffer[idx] == ':') {
+		state->in_key = 0;
+		idx = parse_whitespace(idx, buffer, n, state);
+		if (idx < n && buffer[idx] == '\"') {
+			idx = parse_value(idx, buffer, n, state);
 		}
 	}
 
-	return state.in_braces == 0 ? 0 : 1;
+	return idx;
+}
+
+void parse(char *buffer, int n, parser_struct_t *state) {
+	for (int i = 0; i < n; i++) {
+		if (buffer[i] == '{') {
+			state->in_braces++;
+		} else if (buffer[i] == '}') {
+			state->in_braces--;
+			if (state->in_braces < 0) {
+				state->valid = 1;
+				break;
+			}
+			state->valid = 0;
+		} else if (state->in_braces && buffer[i] == '\"') {
+			i = parse_key(i, buffer, n, state);
+		} else if (state->in_key) {
+			i = parse_key(i, buffer, n, state);
+			i--;
+		} else if (buffer[i] == ' ' || buffer[i] == '\n' || buffer[i] == '\t') {
+			i = parse_whitespace(i, buffer, n, state);
+			i--;
+		} else {
+			state->valid = 1;
+		}
+	}
 }
 
 int main(int argc, char *argv[]) {
@@ -46,14 +97,15 @@ int main(int argc, char *argv[]) {
 	char buffer[1024];
 	int n;
 	int valid = 0, has_data = 0;
+	parser_struct_t *state = calloc(1, sizeof(parser_struct_t));
 	while ((n = fread(buffer, 1, sizeof(buffer), fptr)) > 0) {
-		valid = parse(buffer, n);
+		parse(buffer, n, state);
+		valid = state->valid;
 		has_data = 1;
 	}
+	free(state);
 
-	valid = !has_data;
-
-	if (valid == 0) {
+	if (has_data && valid == 0) {
 		printf("Valid JSON\n");
 	} else {
 		printf("Invalid JSON\n");

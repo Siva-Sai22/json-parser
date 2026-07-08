@@ -1,41 +1,62 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-PARSER="./build/src/JSONParser"
+EXECUTABLE="./build/src/json_parser"
+TEST_DIR="./tests"
 
-passed=0
-failed=0
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m'
 
-for dir in tests/step*; do
-    echo "== $(basename "$dir") =="
+PASSED=0
+FAILED=0
+TOTAL=0
 
-    if [[ -f "$dir/valid.json" ]]; then
-        "$PARSER" "$dir/valid.json" >/dev/null 2>&1
+if [ ! -f "$EXECUTABLE" ]; then
+    echo -e "${RED}Error: Executable not found at $EXECUTABLE${NC}"
+    echo "Make sure you have built the project using CMake first."
+    exit 1
+fi
 
-        if [[ $? -eq 0 ]]; then
-            echo "✓ valid.json"
-            ((passed++))
+echo "Starting JSON Parser Tests..."
+echo "------------------------------------------------"
+
+for test_file in $(find "$TEST_DIR" -type f -name "*.json" | sort); do
+    ((TOTAL++))
+
+    "$EXECUTABLE" "$test_file" > /dev/null 2>&1
+    EXIT_CODE=$?
+
+    filename=$(basename -- "$test_file")
+
+    if [[ "$filename" == valid* ]]; then
+        if [ $EXIT_CODE -eq 0 ]; then
+            echo -e "${GREEN}[PASS]${NC} $test_file"
+            ((PASSED++))
         else
-            echo "✗ valid.json"
-            ((failed++))
+            echo -e "${RED}[FAIL]${NC} $test_file (Expected: Success, Got: Exit Code $EXIT_CODE)"
+            ((FAILED++))
         fi
-    fi
 
-    if [[ -f "$dir/invalid.json" ]]; then
-        "$PARSER" "$dir/invalid.json" >/dev/null 2>&1
-
-        if [[ $? -ne 0 ]]; then
-            echo "✓ invalid.json"
-            ((passed++))
+    elif [[ "$filename" == invalid* ]]; then
+        if [ $EXIT_CODE -ne 0 ]; then
+            echo -e "${GREEN}[PASS]${NC} $test_file"
+            ((PASSED++))
         else
-            echo "✗ invalid.json"
-            ((failed++))
+            echo -e "${RED}[FAIL]${NC} $test_file (Expected: Failure, Got: Exit Code 0)"
+            ((FAILED++))
         fi
-    fi
 
-    echo
+    else
+        echo "[-] Skipping $test_file (Filename must start with 'valid' or 'invalid')"
+        ((TOTAL--))
+    fi
 done
 
-echo "Passed: $passed"
-echo "Failed: $failed"
+echo "------------------------------------------------"
+echo -e "Test Summary: ${GREEN}$PASSED passed${NC}, ${RED}$FAILED failed${NC} out of $TOTAL total tests."
 
-[[ $failed -eq 0 ]]
+if [ $FAILED -ne 0 ]; then
+    exit 1
+else
+    exit 0
+fi

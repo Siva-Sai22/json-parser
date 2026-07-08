@@ -19,11 +19,11 @@ void lexer_free_token(token_t *token) {
 	if (token == NULL) {
 		return;
 	}
-	
+
 	if (token->type == STRING) {
 		free(token->value.string_value);
 	}
-	
+
 	free(token);
 }
 
@@ -33,21 +33,70 @@ static token_t *lexer_create_token(lexer *lexer, token_type_t type) {
 	return token;
 }
 
+void lexer_init(lexer *lexer) {
+	lexer->in_string = 0;
+	lexer->string_len = 0;
+	lexer->tokens = NULL;
+}
+
+static void lexer_manage_in_string(lexer *lexer, char c) {
+	if (c == '\"') {
+		lexer->in_string = 0;
+
+		token_t *token = lexer_create_token(lexer, STRING);
+		token->value.string_value = strdup(lexer->string);
+		lexer_add_token(lexer, token);
+
+		lexer->string_len = 0;
+	} else {
+		lexer->string[lexer->string_len++] = c;
+	}
+}
+
+static void lexer_manage_bool_null(lexer *lexer, char *buffer, int *idx) {
+	if (strncmp(&buffer[*idx], "true", 4) == 0) {
+		token_t *token = lexer_create_token(lexer, BOOLEAN);
+		token->value.boolean_value = 1;
+		lexer_add_token(lexer, token);
+		*idx += 3;
+	} else if (strncmp(&buffer[*idx], "false", 5) == 0) {
+		token_t *token = lexer_create_token(lexer, BOOLEAN);
+		token->value.boolean_value = 0;
+		lexer_add_token(lexer, token);
+		*idx += 4;
+	} else if (strncmp(&buffer[*idx], "null", 4) == 0) {
+		token_t *token = lexer_create_token(lexer, NULL_T);
+		lexer_add_token(lexer, token);
+		*idx += 3;
+	}
+}
+
+static void lexer_manage_number(lexer *lexer, char *buffer, int *idx) {
+	char number_buffer[64];
+	int number_len = 0;
+	while ((buffer[*idx] >= '0' && buffer[*idx] <= '9') ||
+		   buffer[*idx] == '.') {
+		number_buffer[number_len++] = buffer[*idx];
+		(*idx)++;
+	}
+	number_buffer[number_len] = '\0';
+
+	token_t *token = lexer_create_token(lexer, NUMBER);
+	token->value.number_value = atof(number_buffer);
+	lexer_add_token(lexer, token);
+}
+
 void lexer_feed(lexer *lexer, char *buffer, int n) {
 	int idx = 0;
 	while (idx < n) {
 		if (lexer->in_string) {
-			if (buffer[idx] == '\"') {
-				lexer->in_string = 0;
-
-				token_t *token = lexer_create_token(lexer, STRING);
-				token->value.string_value = strdup(lexer->string);
-				lexer_add_token(lexer, token);
-
-				lexer->string_len = 0;
-			} else {
-				lexer->string[lexer->string_len++] = buffer[idx];
-			}
+			lexer_manage_in_string(lexer, buffer[idx]);
+		} else if ((buffer[idx] >= 'a' && buffer[idx] <= 'z') ||
+				   (buffer[idx] >= 'A' && buffer[idx] <= 'Z')) {
+			lexer_manage_bool_null(lexer, buffer, &idx);
+		} else if (buffer[idx] >= '0' && buffer[idx] <= '9') {
+			lexer_manage_number(lexer, buffer, &idx);
+			continue; // Skip the idx increment at the end of the loop
 		} else {
 			switch (buffer[idx]) {
 			case '{': {

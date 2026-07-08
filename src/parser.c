@@ -1,9 +1,8 @@
 #include "parser.h"
+#include "lexer.h"
 
 void parser_init(parser_state_t *state) {
-	state->lexer.in_string = 0;
-	state->lexer.string_len = 0;
-	state->lexer.tokens = NULL;
+	lexer_init(&state->lexer);
 	state->mode = EXPECT_START;
 	state->depth = 0;
 	state->error = 0;

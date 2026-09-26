@@ -89,7 +89,11 @@ static void parser_process_token(parser_state_t *parser, token_t **token) {
 }
 
 void parser_feed(parser_state_t *parser, char *buffer, int n) {
-	lexer_feed(&parser->lexer, buffer, n);
+	int res = lexer_feed(&parser->lexer, buffer, n);
+	if(res == 1) {
+        parser->error = 1;
+        return;
+    }
 
 	token_t *token = parser->lexer.tokens;
 	while (token != NULL) {

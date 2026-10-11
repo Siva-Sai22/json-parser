@@ -139,6 +139,16 @@ int lexer_feed(lexer *lexer, char *buffer, int n) {
 				lexer_add_token(lexer, token);
 				break;
 			}
+			case '[': {
+                token_t *token = lexer_create_token(lexer, OPENING_BRACKET);
+                lexer_add_token(lexer, token);
+                break;
+            }
+			case ']': {
+                token_t *token = lexer_create_token(lexer, CLOSING_BRACKET);
+                lexer_add_token(lexer, token);
+                break;
+            }
 			case ':': {
 				token_t *token = lexer_create_token(lexer, COLON);
 				lexer_add_token(lexer, token);

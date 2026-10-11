@@ -28,6 +28,7 @@ int main(int argc, char *argv[]) {
 	parser_state_t parser;
 	parser_init(&parser);
 
+	// reads size*count bytes from the file
 	while ((n = fread(buffer, 1, sizeof(buffer), fptr)) > 0) {
 		parser_feed(&parser, buffer, n);
 		has_data = 1;

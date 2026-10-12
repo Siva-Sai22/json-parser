@@ -20,7 +20,7 @@ fi
 echo "Starting JSON Parser Tests..."
 echo "------------------------------------------------"
 
-for test_file in $(find "$TEST_DIR" -type f -name "*.json" | sort); do
+while IFS= read -r -d '' test_file; do
     ((TOTAL++))
 
     "$EXECUTABLE" "$test_file" > /dev/null 2>&1
@@ -28,7 +28,7 @@ for test_file in $(find "$TEST_DIR" -type f -name "*.json" | sort); do
 
     filename=$(basename -- "$test_file")
 
-    if [[ "$filename" == valid* ]]; then
+    if [[ "$filename" == valid* || "$filename" == pass* ]]; then
         if [ $EXIT_CODE -eq 0 ]; then
             echo -e "${GREEN}[PASS]${NC} $test_file"
             ((PASSED++))
@@ -37,7 +37,7 @@ for test_file in $(find "$TEST_DIR" -type f -name "*.json" | sort); do
             ((FAILED++))
         fi
 
-    elif [[ "$filename" == invalid* ]]; then
+    elif [[ "$filename" == invalid* || "$filename" == fail* ]]; then
         if [ $EXIT_CODE -ne 0 ]; then
             echo -e "${GREEN}[PASS]${NC} $test_file"
             ((PASSED++))
@@ -47,10 +47,10 @@ for test_file in $(find "$TEST_DIR" -type f -name "*.json" | sort); do
         fi
 
     else
-        echo "[-] Skipping $test_file (Filename must start with 'valid' or 'invalid')"
+        echo "[-] Skipping $test_file (Filename must start with 'valid'/'pass' or 'invalid'/'fail')"
         ((TOTAL--))
     fi
-done
+done < <(find "$TEST_DIR" -type f -name "*.json" -print0 | sort -z)
 
 echo "------------------------------------------------"
 echo -e "Test Summary: ${GREEN}$PASSED passed${NC}, ${RED}$FAILED failed${NC} out of $TOTAL total tests."

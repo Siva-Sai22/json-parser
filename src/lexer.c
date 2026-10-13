@@ -125,7 +125,8 @@ int lexer_feed(lexer *lexer, char *buffer, int n) {
 		} else if ((buffer[idx] >= 'a' && buffer[idx] <= 'z') ||
 				   (buffer[idx] >= 'A' && buffer[idx] <= 'Z')) {
 			res = lexer_manage_bool_null(lexer, buffer[idx]);
-		} else if (buffer[idx] >= '0' && buffer[idx] <= '9') {
+		// >= 1 because numbers can't start with 0
+		} else if (buffer[idx] >= '1' && buffer[idx] <= '9') {
 			lexer_manage_number(lexer, buffer[idx], &idx);
 		} else {
 			switch (buffer[idx]) {

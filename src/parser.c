@@ -26,7 +26,7 @@ static void parser_process_key_or_closing_brace(parser_state_t *parser,
 	} else if ((*token)->type == CLOSING_BRACE) {
 		parser->depth--;
 		if (parser->depth == 0) {
-			return;
+			parser->mode = END;
 		} else {
 			parser->mode = EXPECT_COMMA_OR_CLOSING_BRACE;
 		}
@@ -108,7 +108,7 @@ static void parser_process_comma_or_closing_brace(parser_state_t *parser,
 	} else if ((*token)->type == CLOSING_BRACE) {
 		parser->depth--;
 		if (parser->depth == 0) {
-			return;
+			parser->mode = END;
 		} else {
 			parser->mode = EXPECT_COMMA_OR_CLOSING_BRACE;
 		}
@@ -170,5 +170,9 @@ void parser_feed(parser_state_t *parser, char *buffer, int n) {
 		if (parser->error) {
 			return;
 		}
+	}
+
+	if (parser->mode != END) {
+		parser->error = 1;
 	}
 }

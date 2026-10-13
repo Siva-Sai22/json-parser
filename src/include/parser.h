@@ -11,6 +11,7 @@ typedef enum {
 	EXPECT_VALUE_IN_ARRAY,
 	EXPECT_COMMA_OR_CLOSING_BRACKET,
 	EXPECT_COMMA_OR_CLOSING_BRACE,
+	END
 } parser_mode_t;
 
 typedef struct {

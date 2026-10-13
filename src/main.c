@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	if (has_data && parser.error == 0) {
+	if (has_data && parser.error == 0 && parser.mode == END) {
 		printf("Valid JSON\n");
 		return 0;
 	} else {

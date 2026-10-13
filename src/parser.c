@@ -171,8 +171,4 @@ void parser_feed(parser_state_t *parser, char *buffer, int n) {
 			return;
 		}
 	}
-
-	if (parser->mode != END) {
-		parser->error = 1;
-	}
 }

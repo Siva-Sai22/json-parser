@@ -1,5 +1,6 @@
 #pragma once
 #include "lexer.h"
+#include "stack.h"
 
 typedef enum {
 	EXPECT_OPENING_BRACE,
@@ -17,7 +18,7 @@ typedef enum {
 typedef struct {
 	lexer lexer;
 	parser_mode_t mode;
-	int depth;
+	stack_node_t *stack;
 	int error;
 } parser_state_t;
 

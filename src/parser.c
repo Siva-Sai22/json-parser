@@ -1,11 +1,12 @@
 #include "parser.h"
 #include "lexer.h"
 #include "token.h"
+#include <stdlib.h>
 
 void parser_init(parser_state_t *state) {
 	lexer_init(&state->lexer);
 	state->mode = EXPECT_OPENING_BRACE;
-	state->depth = 0;
+	state->stack = NULL;
 	state->error = 0;
 }
 
@@ -13,7 +14,7 @@ static void parser_process_opening_brace(parser_state_t *parser,
 										 token_t **token) {
 	if ((*token)->type == OPENING_BRACE) {
 		parser->mode = EXPECT_KEY_OR_CLOSING_BRACE;
-		parser->depth++;
+		push(&parser->stack, STACK_OPENING_BRACE);
 	} else {
 		parser->error = 1;
 	}
@@ -24,12 +25,19 @@ static void parser_process_key_or_closing_brace(parser_state_t *parser,
 	if ((*token)->type == STRING) {
 		parser->mode = EXPECT_COLON;
 	} else if ((*token)->type == CLOSING_BRACE) {
-		parser->depth--;
-		if (parser->depth == 0) {
-			parser->mode = END;
+		stack_node_t *top = pop(&parser->stack);
+
+		if (top->type == STACK_OPENING_BRACE) {
+			if (parser->stack == NULL) {
+				parser->mode = END;
+			} else {
+				parser->mode = EXPECT_COMMA_OR_CLOSING_BRACE;
+			}
 		} else {
-			parser->mode = EXPECT_COMMA_OR_CLOSING_BRACE;
+			parser->error = 1;
 		}
+
+		free(top);
 	} else {
 		parser->error = 1;
 	}
@@ -61,7 +69,7 @@ parser_process_value_or_opening_bracket_or_opening_brace(parser_state_t *parser,
 		parser->mode = EXPECT_VALUE_IN_ARRAY_OR_CLOSING_BRACKET;
 	} else if ((*token)->type == OPENING_BRACE) {
 		parser->mode = EXPECT_KEY_OR_CLOSING_BRACE;
-		parser->depth++;
+		push(&parser->stack, STACK_OPENING_BRACE);
 	} else {
 		parser->error = 1;
 	}
@@ -106,12 +114,19 @@ static void parser_process_comma_or_closing_brace(parser_state_t *parser,
 	if ((*token)->type == COMMA) {
 		parser->mode = EXPECT_KEY;
 	} else if ((*token)->type == CLOSING_BRACE) {
-		parser->depth--;
-		if (parser->depth == 0) {
-			parser->mode = END;
+		stack_node_t *top = pop(&parser->stack);
+
+		if (top->type == STACK_OPENING_BRACE) {
+			if (parser->stack == NULL) {
+				parser->mode = END;
+			} else {
+				parser->mode = EXPECT_COMMA_OR_CLOSING_BRACE;
+			}
 		} else {
-			parser->mode = EXPECT_COMMA_OR_CLOSING_BRACE;
+			parser->error = 1;
 		}
+
+		free(top);
 	} else {
 		parser->error = 1;
 	}

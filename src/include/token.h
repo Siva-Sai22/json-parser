@@ -13,6 +13,11 @@ typedef enum {
 	COMMA
 } token_type_t;
 
+typedef enum {
+    STACK_OPENING_BRACE = OPENING_BRACE,
+    STACK_OPENING_BRACKET = OPENING_BRACKET
+} container_type_t;
+
 typedef struct token_t token_t;
 
 struct token_t {

@@ -5,6 +5,7 @@ target_sources(json_parser
         main.c
         lexer.c
         parser.c
+        stack.c
 )
 
 target_include_directories(json_parser
